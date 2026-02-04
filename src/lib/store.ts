@@ -42,7 +42,7 @@ interface AppState {
     settings: Settings;
 
     // Actions
-    addMedicine: (medicine: Omit<Medicine, 'id'>) => void;
+    addMedicine: (medicine: Omit<Medicine, 'id'>) => string;
     updateScheduleStatus: (id: string, status: 'dispensed' | 'missed') => void;
     addLog: (log: Omit<HistoryLog, 'id'>) => void;
     updateDeviceStatus: (status: Partial<DeviceStatus>) => void;
@@ -78,11 +78,13 @@ export const useMedicineStore = create<AppState>()(
             },
 
             addMedicine: (medicine) => {
-                const newMedicine = { ...medicine, id: crypto.randomUUID() };
+                const id = crypto.randomUUID();
+                const newMedicine = { ...medicine, id };
                 set((state) => ({
                     medicines: [...state.medicines, newMedicine],
                 }));
                 get().generateDailySchedules();
+                return id;
             },
 
             updateScheduleStatus: (id, status) => {
@@ -129,11 +131,13 @@ export const useMedicineStore = create<AppState>()(
                         // For now, let's just regenerate
                         todaySchedules.push({
                             id: scheduleId,
+                            medicineId: med.id,
                             medicineName: med.name,
                             dosage: med.dosage,
-                            time: time,
+                            scheduledTime: time,
                             status: 'upcoming', // Default, should ideally check time
-                            compartment: med.compartment
+                            compartment: med.compartment,
+                            date: new Date().toISOString().split('T')[0]
                         });
                     });
                 });
@@ -143,11 +147,22 @@ export const useMedicineStore = create<AppState>()(
                     const existingMap = new Map(state.schedules.map(s => [s.id, s]));
                     const mergedSchedules = todaySchedules.map(newS => {
                         const existing = existingMap.get(newS.id);
-                        return existing ? existing : newS;
+                        if (existing) {
+                            // Migration check: if existing record lacks scheduledTime, patch it
+                            if (!existing.scheduledTime && (existing as any).time) {
+                                return { ...existing, scheduledTime: (existing as any).time };
+                            }
+                            return existing;
+                        }
+                        return newS;
                     });
 
-                    // Sort by time
-                    mergedSchedules.sort((a, b) => a.time.localeCompare(b.time));
+                    // Sort by time safely
+                    mergedSchedules.sort((a, b) => {
+                        const timeA = a.scheduledTime || (a as any).time || '';
+                        const timeB = b.scheduledTime || (b as any).time || '';
+                        return timeA.localeCompare(timeB);
+                    });
 
                     return { schedules: mergedSchedules };
                 });

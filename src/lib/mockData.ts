@@ -40,8 +40,7 @@ export const mockMedicines: Medicine[] = [
 ];
 
 // Generate today's schedule
-const today = new Date('2026-01-31');
-const currentTime = new Date('2026-01-31T14:30:00');
+// Generate today's schedule
 
 export const mockTodaySchedule: MedicineSchedule[] = [
   {

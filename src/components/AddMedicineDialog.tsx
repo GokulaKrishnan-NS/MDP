@@ -13,6 +13,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Pill, Package, Clock, Calendar, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { NotificationService } from "@/services/notificationService";
 
 interface AddMedicineDialogProps {
   open: boolean;
@@ -57,13 +58,29 @@ export function AddMedicineDialog({ open, onOpenChange }: AddMedicineDialogProps
     }
 
     // Add to Store
-    addMedicine({
+    // Add to Store
+    const newId = addMedicine({
       name: medicineName,
       dosage: dosage,
       compartment: parseInt(compartment),
       times: times,
       startDate: startDate,
       endDate: endDate
+    });
+
+    // Schedule Notifications
+    times.forEach(async (time) => {
+      if (time) {
+        await NotificationService.scheduleReminder({
+          id: newId,
+          name: medicineName,
+          dosage: dosage,
+          compartment: parseInt(compartment),
+          times: times,
+          startDate: startDate,
+          endDate: endDate
+        }, time);
+      }
     });
 
     // Success
