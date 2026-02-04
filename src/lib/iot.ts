@@ -11,7 +11,7 @@ export class MockIotService {
     }
 
     // Simulate dispensing with delay
-    async dispense(compartmentId: number): Promise<{ success: boolean; message: string }> {
+    async dispense(_compartmentId: number): Promise<{ success: boolean; message: string }> {
         return new Promise((resolve) => {
             setTimeout(() => {
                 // 90% success rate simulation

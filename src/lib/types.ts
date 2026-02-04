@@ -12,13 +12,13 @@ export interface Medicine {
 
 export interface MedicineSchedule {
   id: string;
-  medicineId?: string; // Optional now as we generate IDs
+  medicineId: string;
   medicineName: string;
   dosage: string;
   compartment: number;
-  time: string;
-  status: MedicineStatus;
-  date?: string;
+  scheduledTime: string; // Added to match mockData usage
+  status: 'pending' | 'dispensed' | 'missed' | 'upcoming';
+  date: string;
 }
 
 export interface HistoryLog {

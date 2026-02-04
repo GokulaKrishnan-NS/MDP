@@ -1,16 +1,31 @@
-import { Outlet, useLocation, Link } from "react-router";
-import { LayoutDashboard, History, Activity, Settings } from "lucide-react";
+import { Outlet, useLocation, Link, useNavigate } from "react-router";
+import { LayoutDashboard, History, Activity, Settings, Building2 } from "lucide-react";
 import { cn } from "./ui/utils";
+import { useAuthStore } from "@/lib/authStore";
+import { useEffect } from "react";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/history", label: "History", icon: History },
   { path: "/device", label: "Device", icon: Activity },
+  { path: "/hospitals", label: "Hospitals", icon: Building2 },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, onboardingCompleted } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || !onboardingCompleted) {
+      navigate("/auth/login");
+    }
+  }, [isAuthenticated, onboardingCompleted, navigate]);
+
+  if (!isAuthenticated || !onboardingCompleted) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-white to-green-50/30">

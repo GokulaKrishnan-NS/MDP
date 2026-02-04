@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmergencyButton } from "./EmergencyButton";
+
 export function Settings() {
   const { settings, updateSettings } = useMedicineStore();
 
@@ -38,11 +40,14 @@ export function Settings() {
   return (
     <div className="container max-w-4xl mx-auto px-4 py-6 md:py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-foreground mb-2">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account and application preferences
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-foreground mb-2">Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account and application preferences
+          </p>
+        </div>
+        <EmergencyButton />
       </div>
 
       <div className="space-y-6">
@@ -102,7 +107,7 @@ export function Settings() {
               <Switch
                 id="email-notifications"
                 checked={settings.emailNotifications}
-                onCheckedChange={(checked) => updateSettings({ emailNotifications: checked })}
+                onCheckedChange={(checked: boolean) => updateSettings({ emailNotifications: checked })}
               />
             </div>
 
@@ -118,7 +123,7 @@ export function Settings() {
               <Switch
                 id="sms-notifications"
                 checked={settings.smsNotifications}
-                onCheckedChange={(checked) => updateSettings({ smsNotifications: checked })}
+                onCheckedChange={(checked: boolean) => updateSettings({ smsNotifications: checked })}
               />
             </div>
 
@@ -128,7 +133,7 @@ export function Settings() {
               <Label htmlFor="reminder-before">Reminder Time</Label>
               <Select
                 value={settings.reminderBefore}
-                onValueChange={(value) => updateSettings({ reminderBefore: value })}
+                onValueChange={(value: string) => updateSettings({ reminderBefore: value })}
               >
                 <SelectTrigger id="reminder-before">
                   <SelectValue />

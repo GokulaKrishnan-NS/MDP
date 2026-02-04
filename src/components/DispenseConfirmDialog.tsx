@@ -24,7 +24,7 @@ export function DispenseConfirmDialog({
   if (!schedule) return null;
 
   return (
-    <Dialog open={!!schedule} onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open={!!schedule} onOpenChange={(open: boolean) => !open && onCancel()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

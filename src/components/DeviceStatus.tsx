@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMedicineStore } from "../lib/store";
 import { iotService } from "../lib/iot";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner";
 
 export function DeviceStatus() {
-  const { device, updateDeviceStatus } = useMedicineStore();
+  const { device, medicines, updateDeviceStatus } = useMedicineStore(); // Added medicines
   const [isReconnecting, setIsReconnecting] = useState(false);
 
   const handleReconnect = async () => {
@@ -54,15 +54,18 @@ export function DeviceStatus() {
     return <Battery className={`w-8 h-8 ${getBatteryColor()}`} />;
   };
 
-  // Mock compartment data (could be moved to store later if needed)
-  const compartments = [
-    { id: 1, medicine: "Aspirin", filled: true, remaining: 15 },
-    { id: 2, medicine: "Metformin", filled: true, remaining: 12 },
-    { id: 3, medicine: "Lisinopril", filled: true, remaining: 20 },
-    { id: 4, medicine: "Vitamin D", filled: true, remaining: 25 },
-    { id: 5, medicine: "Empty", filled: false, remaining: 0 },
-    { id: 6, medicine: "Empty", filled: false, remaining: 0 },
-  ];
+  // Derive compartment status from medicines
+  // We assume 6 slots for now as per previous mock
+  const compartments = Array.from({ length: 6 }, (_, i) => {
+    const slotId = i + 1;
+    const med = medicines.find(m => m.compartment === slotId);
+    return {
+      id: slotId,
+      medicine: med ? med.name : "Empty",
+      filled: !!med,
+      remaining: med ? 20 : 0, // Mock remaining count
+    };
+  });
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-6 md:py-8">
@@ -219,8 +222,8 @@ export function DeviceStatus() {
               <div
                 key={compartment.id}
                 className={`rounded-lg border p-4 ${compartment.filled
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-gray-50 border-gray-200"
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-gray-50 border-gray-200"
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">

@@ -71,7 +71,7 @@ export function MedicineCard({ schedule, onDispense, isNext }: MedicineCardProps
             <div className="flex flex-wrap gap-4 mb-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
-                <span>{schedule.time}</span>
+                <span>{schedule.scheduledTime}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Package className="w-4 h-4" />

@@ -9,6 +9,8 @@ import { AddMedicineDialog } from "./AddMedicineDialog";
 import { DispenseConfirmDialog } from "./DispenseConfirmDialog";
 import { toast } from "sonner";
 
+import { EmergencyButton } from "./EmergencyButton";
+
 export function Dashboard() {
   const { schedules, updateScheduleStatus, addLog, generateDailySchedules } = useMedicineStore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -78,7 +80,7 @@ export function Dashboard() {
     <div className="container max-w-6xl mx-auto px-4 py-6 md:py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <div>
             <h1 className="text-foreground mb-2">Today's Medications</h1>
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -86,13 +88,19 @@ export function Dashboard() {
               <p className="text-sm">{formattedDate}</p>
             </div>
           </div>
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Medicine
-          </Button>
+          <div className="flex gap-2">
+            <EmergencyButton className="hidden md:flex" />
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Medicine
+            </Button>
+          </div>
+        </div>
+        <div className="md:hidden mb-4">
+          <EmergencyButton className="w-full" />
         </div>
       </div>
 
