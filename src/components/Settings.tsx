@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useMedicineStore } from "../lib/store";
+import { apiClient } from "../lib/apiClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -27,10 +29,32 @@ import { EmergencyButton } from "./EmergencyButton";
 export function Settings() {
   const { settings, updateSettings } = useMedicineStore();
 
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully!", {
-      description: "Your preferences have been updated.",
-    });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const { ok, data } = await apiClient('/user/emergency-contact', {
+        method: 'PUT',
+        body: JSON.stringify({
+          emergencyContact: settings.emergencyContact
+        })
+      });
+
+      if (!ok) {
+        throw new Error(data?.message || 'Failed to update emergency contact');
+      }
+
+      toast.success("Settings saved successfully!", {
+        description: "Your emergency contact has been updated in the database.",
+      });
+    } catch (error: any) {
+      toast.error("Failed to save settings", {
+        description: error.message || "Please check your network connection.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -243,11 +267,13 @@ export function Settings() {
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={handleSaveSettings}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+            disabled={isSaving}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50"
           >
             <Save className="w-4 h-4 mr-2" />
-            Save Settings
+            {isSaving ? "Saving..." : "Save Settings"}
           </Button>
+
           <Button
             variant="outline"
             onClick={handleLogout}

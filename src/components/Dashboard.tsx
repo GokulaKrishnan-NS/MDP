@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useMedicineStore } from "../lib/store";
 import { iotService } from "../lib/iot";
 import { MedicineSchedule } from "../lib/types";
 import { MedicineCard } from "./MedicineCard";
@@ -8,18 +7,33 @@ import { Plus, Calendar } from "lucide-react";
 import { AddMedicineDialog } from "./AddMedicineDialog";
 import { DispenseConfirmDialog } from "./DispenseConfirmDialog";
 import { toast } from "sonner";
-
+import { apiClient, ApiError } from "../lib/apiClient";
 import { EmergencyButton } from "./EmergencyButton";
 
 export function Dashboard() {
-  const { schedules, updateScheduleStatus, addLog, generateDailySchedules } = useMedicineStore();
+  const [schedules, setSchedules] = useState<MedicineSchedule[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [dispenseDialogSchedule, setDispenseDialogSchedule] = useState<MedicineSchedule | null>(null);
 
+  const fetchSchedules = async () => {
+    try {
+      const response = await apiClient('/schedules', { method: 'GET' });
+      if (response.ok && response.data.success) {
+        setSchedules(response.data.data);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message, { description: error.type === 'NETWORK' ? 'Check that your phone and PC are on the same Wi-Fi network.' : undefined });
+      } else {
+        toast.error('Could not load schedules');
+      }
+      console.error('Failed to fetch schedules', error);
+    }
+  };
+
   useEffect(() => {
-    // Generate schedules on mount (in a real app, this might be more sophisticated)
-    generateDailySchedules();
-  }, [generateDailySchedules]);
+    fetchSchedules();
+  }, []);
 
   const handleDispense = (schedule: MedicineSchedule) => {
     setDispenseDialogSchedule(schedule);
@@ -27,32 +41,46 @@ export function Dashboard() {
 
   const confirmDispense = async () => {
     if (dispenseDialogSchedule) {
-      const toastId = toast.loading("Dispensing medicine...", {
-        description: `Dispensing ${dispenseDialogSchedule.medicineName} from compartment ${dispenseDialogSchedule.compartment}`
+      const toastId = toast.loading("Verifying and dispensing medicine...", {
+        description: `Dispensing ${dispenseDialogSchedule.medicineName}`
       });
 
       try {
-        const result = await iotService.dispense(dispenseDialogSchedule.compartment);
+        // 1. Call real backend API for validation and database logging
+        const response = await apiClient('/dispense', {
+          method: 'POST',
+          body: JSON.stringify({
+            schedule_id: dispenseDialogSchedule.id,
+            timestamp: new Date().toISOString()
+          }),
+          headers: {
+            'X-Idempotency-Key': crypto.randomUUID()
+          }
+        });
 
-        if (result.success) {
-          // Update store
-          updateScheduleStatus(dispenseDialogSchedule.id, 'dispensed');
+        if (response.ok && response.data.success) {
+          // 2. ONLY if backend validates it, we fire the IoT command
+          // The mock IoT service required a compartment originally. Defaulting to 1 for dummy pass.
+          const iotResult = await iotService.dispense(1);
 
-          // Log to history
-          addLog({
-            date: new Date().toISOString(),
-            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            medicineName: dispenseDialogSchedule.medicineName,
-            dosage: dispenseDialogSchedule.dosage,
-            status: 'dispensed'
-          });
-
-          toast.success("Dispensed successfully", { id: toastId });
+          if (iotResult.success) {
+            toast.success("Dispensed successfully", { id: toastId });
+            // Refresh schedules array to get new 'DISPENSED' status from server
+            await fetchSchedules();
+          } else {
+            toast.error(iotResult.message, { id: toastId });
+          }
         } else {
-          toast.error(result.message, { id: toastId });
+          toast.error(response.data.message || "Dispense Validation Failed", { id: toastId });
         }
+
       } catch (error) {
-        toast.error("Failed to communicate with device", { id: toastId });
+        if (error instanceof ApiError && error.type === 'NETWORK') {
+          toast.error(error.message, { id: toastId, description: 'Ensure phone and backend are on the same Wi-Fi.' });
+        } else {
+          toast.error('Server error during dispense. Please try again.', { id: toastId });
+        }
+        console.error('Dispense error:', error);
       }
 
       setDispenseDialogSchedule(null);
@@ -60,13 +88,13 @@ export function Dashboard() {
   };
 
   // Find next upcoming dose
-  const upcomingSchedules = schedules.filter((s) => s.status === 'upcoming');
+  const upcomingSchedules = schedules.filter((s) => s.status?.toLowerCase() === 'scheduled');
   const nextSchedule = upcomingSchedules.length > 0 ? upcomingSchedules[0] : null;
 
   // Separate by status
-  const upcoming = schedules.filter((s) => s.status === 'upcoming');
-  const dispensed = schedules.filter((s) => s.status === 'dispensed');
-  const missed = schedules.filter((s) => s.status === 'missed');
+  const upcoming = schedules.filter((s) => s.status?.toLowerCase() === 'scheduled');
+  const dispensed = schedules.filter((s) => s.status?.toLowerCase() === 'taken');
+  const missed = schedules.filter((s) => s.status?.toLowerCase() === 'missed' || s.status?.toLowerCase() === 'late' || s.status?.toLowerCase() === 'blocked');
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString('en-US', {

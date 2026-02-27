@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMedicineStore } from "../lib/store";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Pill, Package, Clock, Calendar, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { NotificationService } from "@/services/notificationService";
+import { apiClient } from "../lib/apiClient";
 
 interface AddMedicineDialogProps {
   open: boolean;
@@ -21,7 +20,6 @@ interface AddMedicineDialogProps {
 }
 
 export function AddMedicineDialog({ open, onOpenChange }: AddMedicineDialogProps) {
-  const { addMedicine } = useMedicineStore();
   const [medicineName, setMedicineName] = useState("");
   const [dosage, setDosage] = useState("");
   const [compartment, setCompartment] = useState("");
@@ -43,7 +41,7 @@ export function AddMedicineDialog({ open, onOpenChange }: AddMedicineDialogProps
     setTimes(newTimes);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
@@ -57,36 +55,36 @@ export function AddMedicineDialog({ open, onOpenChange }: AddMedicineDialogProps
       return;
     }
 
-    // Add to Store
-    // Add to Store
-    const newId = addMedicine({
-      name: medicineName,
-      dosage: dosage,
-      compartment: parseInt(compartment),
-      times: times,
-      startDate: startDate,
-      endDate: endDate
-    });
-
-    // Schedule Notifications
-    times.forEach(async (time) => {
-      if (time) {
-        await NotificationService.scheduleReminder({
-          id: newId,
+    // Add to Database via API
+    try {
+      const response = await apiClient('/medicines', {
+        method: 'POST',
+        body: JSON.stringify({
           name: medicineName,
           dosage: dosage,
           compartment: parseInt(compartment),
           times: times,
           startDate: startDate,
           endDate: endDate
-        }, time);
-      }
-    });
+        })
+      });
 
-    // Success
-    toast.success("Medicine added successfully!", {
-      description: `${medicineName} has been added to your schedule.`,
-    });
+      if (response.ok && response.data.success) {
+        toast.success("Medicine added successfully!", {
+          description: `${medicineName} has been fully mapped to the device.`,
+        });
+
+        // Force a page reload to re-fetch the new schedules from DB for now
+        // A better approach would be to pass a fetch callback from Dashboard
+        window.location.reload();
+      } else {
+        toast.error(response.data.message || "Failed to add medicine.");
+        return;
+      }
+    } catch (error) {
+      toast.error("Network error communicating with server.");
+      return;
+    }
 
     // Reset form
     setMedicineName("");

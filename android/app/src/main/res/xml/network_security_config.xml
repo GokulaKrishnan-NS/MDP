@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext HTTP traffic to local development/backend servers on LAN -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- LAN subnet for local Wi-Fi development -->
+        <domain includeSubdomains="true">172.20.0.0</domain>
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">10.175.0.0</domain>
+        <!-- Direct IP for the backend host -->
+        <domain includeSubdomains="false">172.20.165.182</domain>
+        <domain includeSubdomains="false">10.175.32.40</domain>
+    </domain-config>
+    <!-- Base config: blocks cleartext everywhere else (secure by default) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

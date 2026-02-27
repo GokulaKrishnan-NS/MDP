@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { Pill, Package, Clock, CheckCircle2 } from "lucide-react";
+import { Pill, Clock, CheckCircle2 } from "lucide-react";
 
 interface DispenseConfirmDialogProps {
   schedule: MedicineSchedule | null;
@@ -41,19 +41,15 @@ export function DispenseConfirmDialog({
         <div className="space-y-4 py-4">
           {/* Medicine Details */}
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-            <h3 className="text-foreground mb-3">{schedule.medicineName}</h3>
+            <h3 className="text-foreground mb-3 font-semibold">{schedule.medicineName || 'Medicine'}</h3>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Pill className="w-4 h-4" />
-                <span>Dosage: {schedule.dosage}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Package className="w-4 h-4" />
-                <span>Compartment: {schedule.compartment}</span>
+                <span>Dosage: {schedule.dosage || 'Not specified'}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
-                <span>Scheduled: {schedule.scheduledTime}</span>
+                <span>Scheduled: {schedule.scheduled_time}</span>
               </div>
             </div>
           </div>
@@ -64,8 +60,7 @@ export function DispenseConfirmDialog({
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-green-900">
-                  The dispenser will release the medication from compartment{" "}
-                  <strong>{schedule.compartment}</strong>.
+                  The backend will validate this dispense request and log it securely.
                 </p>
                 <p className="text-xs text-green-700 mt-1">
                   Please ensure you're ready to receive the medication.

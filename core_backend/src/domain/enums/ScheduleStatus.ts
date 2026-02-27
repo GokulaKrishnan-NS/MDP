@@ -1,0 +1,7 @@
+export enum ScheduleStatus {
+    SCHEDULED = 'SCHEDULED',
+    PENDING_WINDOW = 'PENDING_WINDOW',
+    DISPENSED = 'DISPENSED',
+    MISSED = 'MISSED',
+    FAILED = 'FAILED'
+}
