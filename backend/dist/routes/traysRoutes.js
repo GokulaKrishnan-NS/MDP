@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const TrayController_1 = require("../controllers/TrayController");
+const router = (0, express_1.Router)();
+router.get('/', TrayController_1.TrayController.getAll);
+router.post('/', TrayController_1.TrayController.addTray);
+router.post('/init', TrayController_1.TrayController.initTrays);
+router.delete('/:trayId', TrayController_1.TrayController.deleteTray);
+exports.default = router;
