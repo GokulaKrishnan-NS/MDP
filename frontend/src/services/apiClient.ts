@@ -19,4 +19,5 @@ export const api = {
     dispense: (medicineName: string, mode: string) =>
         request('/dispense', { method: 'POST', body: JSON.stringify({ medicineName, mode }) }),
     getHospitals: (lat: number, lng: number) => request(`/hospitals?lat=${lat}&lng=${lng}`),
+    getDeviceStatus: () => request('/device/status'),
 };

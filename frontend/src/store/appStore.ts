@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Tray, AppMode, EmergencyContact, Warning } from '../types';
 import { mockAddTray, mockDispense } from '../engine/mockEngine';
+import { isWithinDoseWindow } from '../utils/timeWindow';
+import { logDispenseEvent } from '../utils/historyManager';
 
 interface AlarmState {
     active: boolean;
@@ -43,10 +45,36 @@ export const useAppStore = create<AppState>()(
             removeTray: (trayId) => set(s => ({ trays: s.trays.filter(t => t.trayId !== trayId) })),
 
             dispense: (medicineName) => {
-                const { trays, result } = mockDispense(get().trays, medicineName);
+                const currentTrays = get().trays;
+                const tray = currentTrays.find(t => t.medicineName.toLowerCase() === medicineName.toLowerCase());
+
+                // ── Time-window guard ──────────────────────────────────────
+                if (tray?.scheduledTime) {
+                    const windowResult = isWithinDoseWindow(tray.scheduledTime);
+                    if (!windowResult.ok) {
+                        logDispenseEvent(
+                            { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
+                            tray.pillsPerDose,
+                            windowResult.status as 'blocked-early' | 'blocked-late',
+                        );
+                        throw new Error(windowResult.message);
+                    }
+                }
+
+                // ── Existing dispense logic (UNCHANGED) ───────────────────
+                const { trays, result } = mockDispense(currentTrays, medicineName);
                 set({ trays });
                 if (result.warnings.length > 0) {
                     set({ alarm: { active: true, warnings: result.warnings, medicineName } });
+                }
+
+                // ── Log successful dispense ───────────────────────────────
+                if (tray) {
+                    logDispenseEvent(
+                        { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
+                        tray.pillsPerDose,
+                        'success',
+                    );
                 }
             },
 

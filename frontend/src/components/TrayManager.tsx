@@ -13,6 +13,7 @@ export function TrayManager({ onSaved }: Props) {
     const [form, setForm] = useState({
         medicineName: '', pillsRemaining: '', threshold: '3',
         pillsPerDose: '1', dosesPerDay: '2', durationDays: '7',
+        scheduledTime: '',
     });
     const [error, setError] = useState('');
     const [saveWarnings, setSaveWarnings] = useState<string[]>([]);
@@ -40,9 +41,10 @@ export function TrayManager({ onSaved }: Props) {
                 pillsPerDose: Number(form.pillsPerDose),
                 dosesPerDay: Number(form.dosesPerDay),
                 durationDays: Number(form.durationDays),
+                ...(form.scheduledTime ? { scheduledTime: form.scheduledTime } : {}),
             });
             setSaveWarnings(warnings);
-            setForm({ medicineName: '', pillsRemaining: '', threshold: '3', pillsPerDose: '1', dosesPerDay: '2', durationDays: '7' });
+            setForm({ medicineName: '', pillsRemaining: '', threshold: '3', pillsPerDose: '1', dosesPerDay: '2', durationDays: '7', scheduledTime: '' });
             onSaved?.(warnings);
         } catch (err: any) {
             setError(err.message);
@@ -83,6 +85,10 @@ export function TrayManager({ onSaved }: Props) {
                     <div className="form-group">
                         <label>Duration (days)</label>
                         <input className="input" type="number" min="1" value={form.durationDays} onChange={e => f('durationDays', e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <label>Dose Time (optional)</label>
+                        <input className="input" type="time" value={form.scheduledTime} onChange={e => f('scheduledTime', e.target.value)} />
                     </div>
                 </div>
 
@@ -128,6 +134,7 @@ export function TrayManager({ onSaved }: Props) {
                                     <span>{tray.pillsPerDose}× / dose</span>
                                     <span>{tray.dosesPerDay}× / day</span>
                                     <span>{tray.durationDays} days</span>
+                                    {tray.scheduledTime && <span className="tray-schedule-badge">⏰ {tray.scheduledTime}</span>}
                                 </div>
                                 <div className="tray-motor">{tray.motorCommand}</div>
                             </div>

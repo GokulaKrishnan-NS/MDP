@@ -12,6 +12,7 @@ export interface Tray {
     durationDays: number;
     courseTotalRequired: number;
     motorCommand: string;
+    scheduledTime?: string; // "HH:MM" 24-hour format
 }
 
 export interface CreateTrayInput {
@@ -21,6 +22,7 @@ export interface CreateTrayInput {
     pillsPerDose: number;
     dosesPerDay: number;
     durationDays: number;
+    scheduledTime?: string; // "HH:MM" 24-hour format
 }
 
 export type WarningType = 'LOW_STOCK' | 'INSUFFICIENT_COURSE';

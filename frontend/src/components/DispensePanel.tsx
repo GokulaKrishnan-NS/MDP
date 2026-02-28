@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { api } from '../services/apiClient';
+import { logDispenseEvent } from '../utils/historyManager';
+import { isWithinDoseWindow } from '../utils/timeWindow';
 
 interface Props {
     mode: 'mock' | 'iot';
@@ -19,12 +21,31 @@ export function DispensePanel({ mode }: Props) {
         if (!selected) { setError('Select a medicine first'); return; }
         setError(''); setMessage(''); setLoading(true);
 
+        const tray = trays.find(t => t.medicineName === selected);
+
         try {
             if (mode === 'mock') {
-                dispense(selected);
+                dispense(selected); // guard + logging handled inside appStore
                 setMessage(`✓ Dose dispensed (mock): ${selected}`);
             } else {
+                // IoT time-window guard (client-side)
+                if (tray?.scheduledTime) {
+                    const win = isWithinDoseWindow(tray.scheduledTime);
+                    if (!win.ok) {
+                        if (tray) logDispenseEvent(
+                            { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
+                            tray.pillsPerDose,
+                            win.status as 'blocked-early' | 'blocked-late',
+                        );
+                        throw new Error(win.message);
+                    }
+                }
                 const res = await api.dispense(selected, 'iot') as any;
+                if (tray) logDispenseEvent(
+                    { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
+                    tray.pillsPerDose,
+                    'success',
+                );
                 setMessage(`✓ Dose dispensed (IoT): ${res.data?.medicineName}. Pills remaining: ${res.data?.pillsRemaining}`);
             }
             setSelected('');
@@ -57,6 +78,7 @@ export function DispensePanel({ mode }: Props) {
                             >
                                 <span className="tray-select-name">{tray.medicineName}</span>
                                 <span className="tray-select-stock">{tray.pillsRemaining} pills</span>
+                                {tray.scheduledTime && <span className="tray-select-schedule">⏰ {tray.scheduledTime}</span>}
                             </button>
                         ))}
                     </div>

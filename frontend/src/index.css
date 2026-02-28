@@ -1034,3 +1034,191 @@ body,
     padding: 24px 16px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   History Panel
+   ══════════════════════════════════════════════════════════ */
+.history-table-wrap {
+  overflow-x: auto;
+  margin-top: 4px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.history-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.history-td--date {
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.history-td--med {
+  font-weight: 600;
+}
+
+.history-td--qty {
+  text-align: center;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.history-row:last-child .history-td {
+  border-bottom: none;
+}
+
+.history-row--success {
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.history-row--blocked-early {
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.history-row--blocked-late {
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.history-row:hover .history-td {
+  background: var(--bg-glass);
+}
+
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-status--success {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.history-status--early {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.history-status--late {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Device Status Panel
+   ══════════════════════════════════════════════════════════ */
+.device-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.device-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px;
+  background: var(--bg-700);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: var(--transition);
+}
+
+.device-card:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+
+.device-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.device-card-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.device-card-value--small {
+  font-size: 15px;
+}
+
+.device-card-icon {
+  font-size: 32px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 0 12px currentColor;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.device-refresh-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Scheduled-time badges (tray cards + dispense selector)
+   ══════════════════════════════════════════════════════════ */
+.tray-schedule-badge {
+  font-size: 10px;
+  color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 99px;
+  padding: 1px 6px;
+}
+
+.tray-select-schedule {
+  font-size: 11px;
+  color: var(--accent-primary);
+  opacity: 0.85;
+}

@@ -6,8 +6,10 @@ import { DispensePanel } from './components/DispensePanel';
 import { AlarmModal } from './components/AlarmModal';
 import { HospitalList } from './components/HospitalList';
 import { EmergencyContacts } from './components/EmergencyContacts';
+import { HistoryPanel } from './components/HistoryPanel';
+import { DeviceStatusPanel } from './components/DeviceStatusPanel';
 
-type Tab = 'dispense' | 'trays' | 'hospitals' | 'contacts' | 'settings';
+type Tab = 'dispense' | 'trays' | 'hospitals' | 'contacts' | 'history' | 'device';
 
 export default function App() {
   const mode = useAppStore(s => s.mode);
@@ -48,6 +50,8 @@ export default function App() {
           { id: 'trays', label: '⚙️ Trays' },
           { id: 'hospitals', label: '🏥 Hospitals' },
           { id: 'contacts', label: '📞 Contacts' },
+          { id: 'history', label: '📋 History' },
+          { id: 'device', label: '🔋 Device' },
         ] as { id: Tab; label: string }[]).map(t => (
           <button key={t.id} className={`nav-tab ${tab === t.id ? 'nav-tab--active' : ''}`} onClick={() => setTab(t.id as Tab)}>
             {t.label}
@@ -61,6 +65,8 @@ export default function App() {
         {tab === 'trays' && <TrayManager />}
         {tab === 'hospitals' && <HospitalList />}
         {tab === 'contacts' && <EmergencyContacts />}
+        {tab === 'history' && <HistoryPanel />}
+        {tab === 'device' && <DeviceStatusPanel mode={mode} />}
       </main>
     </div>
   );

@@ -24,6 +24,7 @@ export function mockAddTray(trays: Tray[], input: CreateTrayInput): { tray: Tray
         durationDays: input.durationDays,
         courseTotalRequired,
         motorCommand: `TRAY_${trayId}_ROTATE`,
+        ...(input.scheduledTime ? { scheduledTime: input.scheduledTime } : {}),
     };
     return { tray, warnings };
 }
