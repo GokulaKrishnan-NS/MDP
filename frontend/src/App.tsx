@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from './store/appStore';
 import { ModeSelect } from './components/ModeSelect';
 import { TrayManager } from './components/TrayManager';
 import { DispensePanel } from './components/DispensePanel';
 import { AlarmModal } from './components/AlarmModal';
-import { HospitalList } from './components/HospitalList';
 import { EmergencyContacts } from './components/EmergencyContacts';
 import { HistoryPanel } from './components/HistoryPanel';
 import { DeviceStatusPanel } from './components/DeviceStatusPanel';
+import { bootstrapPermissions } from './utils/permissions';
 
-type Tab = 'dispense' | 'trays' | 'hospitals' | 'contacts' | 'history' | 'device';
+type Tab = 'dispense' | 'trays' | 'contacts' | 'history' | 'device';
 
 export default function App() {
   const mode = useAppStore(s => s.mode);
@@ -17,17 +17,20 @@ export default function App() {
   const setMode = useAppStore(s => s.setMode);
   const [tab, setTab] = useState<Tab>('dispense');
 
-  // Not chosen yet — show mode selection
+  // Request notification permissions on first render
+  useEffect(() => {
+    bootstrapPermissions().catch(console.warn);
+  }, []);
+
   if (!mode) return <ModeSelect />;
 
   return (
     <div className="app-shell">
-      {/* Alarm modal renders on top of everything — requires acknowledgment */}
+      {/* Alarm modal renders on top of everything */}
       {alarm.active && (
         <AlarmModal
           warnings={alarm.warnings}
           medicineName={alarm.medicineName}
-          onFindHospital={() => setTab('hospitals')}
         />
       )}
 
@@ -48,12 +51,11 @@ export default function App() {
         {([
           { id: 'dispense', label: '💊 Dispense' },
           { id: 'trays', label: '⚙️ Trays' },
-          { id: 'hospitals', label: '🏥 Hospitals' },
           { id: 'contacts', label: '📞 Contacts' },
           { id: 'history', label: '📋 History' },
           { id: 'device', label: '🔋 Device' },
         ] as { id: Tab; label: string }[]).map(t => (
-          <button key={t.id} className={`nav-tab ${tab === t.id ? 'nav-tab--active' : ''}`} onClick={() => setTab(t.id as Tab)}>
+          <button key={t.id} className={`nav-tab ${tab === t.id ? 'nav-tab--active' : ''}`} onClick={() => setTab(t.id)}>
             {t.label}
           </button>
         ))}
@@ -63,7 +65,6 @@ export default function App() {
       <main className="app-main">
         {tab === 'dispense' && <DispensePanel mode={mode} />}
         {tab === 'trays' && <TrayManager />}
-        {tab === 'hospitals' && <HospitalList />}
         {tab === 'contacts' && <EmergencyContacts />}
         {tab === 'history' && <HistoryPanel />}
         {tab === 'device' && <DeviceStatusPanel mode={mode} />}

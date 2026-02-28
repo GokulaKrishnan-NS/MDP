@@ -14,6 +14,8 @@ export interface DoseWindowResult {
     ok: boolean;
     status: DoseWindowStatus;
     message: string;
+    /** The exact HH:MM slot that matched (only set when ok=true or blocked-late) */
+    matchedSlot?: string;
 }
 
 /**
@@ -43,6 +45,7 @@ export function isWithinDoseWindow(scheduledTime: string): DoseWindowResult {
             ok: false,
             status: 'blocked-late',
             message: `Missed window — dose was scheduled at ${scheduledTime} (${minutesAgo} min ago). Contact your doctor.`,
+            matchedSlot: scheduledTime,
         };
     }
 
@@ -50,5 +53,45 @@ export function isWithinDoseWindow(scheduledTime: string): DoseWindowResult {
         ok: true,
         status: 'ok',
         message: `On time (scheduled ${scheduledTime}).`,
+        matchedSlot: scheduledTime,
     };
 }
+
+/**
+ * Scans multiple dose slots and returns the first one within the active window.
+ * Returns null if no slot is currently active.
+ */
+export function findActiveDoseSlot(doseTimes: string[]): { slot: string; result: DoseWindowResult } | null {
+    for (const slot of doseTimes) {
+        const result = isWithinDoseWindow(slot);
+        if (result.ok) return { slot, result };
+    }
+    return null;
+}
+
+/**
+ * Returns the nearest upcoming slot message for a set of dose times,
+ * used to give the user a meaningful "come back at HH:MM" error.
+ */
+export function getNearestBlockedReason(doseTimes: string[]): string {
+    if (doseTimes.length === 0) return 'No dose times configured.';
+
+    const now = new Date();
+    let nearest: { minutesUntil: number; slot: string } | null = null;
+
+    for (const slot of doseTimes) {
+        const [h, m] = slot.split(':').map(Number);
+        const t = new Date(now);
+        t.setHours(h, m, 0, 0);
+        if (t <= now) t.setDate(t.getDate() + 1); // wrap to tomorrow if past
+        const minutesUntil = Math.ceil((t.getTime() - now.getTime()) / 60_000);
+        if (!nearest || minutesUntil < nearest.minutesUntil) {
+            nearest = { minutesUntil, slot };
+        }
+    }
+
+    return nearest
+        ? `Next dose at ${nearest.slot} (in ${nearest.minutesUntil} min)`
+        : 'No upcoming doses today.';
+}
+

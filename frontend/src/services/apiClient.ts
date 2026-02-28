@@ -18,6 +18,6 @@ export const api = {
     deleteTray: (id: number) => request(`/trays/${id}`, { method: 'DELETE' }),
     dispense: (medicineName: string, mode: string) =>
         request('/dispense', { method: 'POST', body: JSON.stringify({ medicineName, mode }) }),
-    getHospitals: (lat: number, lng: number) => request(`/hospitals?lat=${lat}&lng=${lng}`),
     getDeviceStatus: () => request('/device/status'),
 };
+

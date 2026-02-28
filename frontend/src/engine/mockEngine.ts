@@ -24,6 +24,12 @@ export function mockAddTray(trays: Tray[], input: CreateTrayInput): { tray: Tray
         durationDays: input.durationDays,
         courseTotalRequired,
         motorCommand: `TRAY_${trayId}_ROTATE`,
+        // Support both new doseTimes array and legacy scheduledTime
+        doseTimes: input.doseTimes?.length
+            ? input.doseTimes
+            : input.scheduledTime
+                ? [input.scheduledTime]
+                : [],
         ...(input.scheduledTime ? { scheduledTime: input.scheduledTime } : {}),
     };
     return { tray, warnings };

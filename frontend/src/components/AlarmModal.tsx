@@ -5,16 +5,16 @@ import { useAppStore } from '../store/appStore';
 interface Props {
     warnings: Warning[];
     medicineName: string;
-    onFindHospital: () => void;
 }
 
-export function AlarmModal({ warnings, medicineName, onFindHospital }: Props) {
+export function AlarmModal({ warnings, medicineName }: Props) {
+
     const acknowledgeAlarm = useAppStore(s => s.acknowledgeAlarm);
     const contacts = useAppStore(s => s.contacts);
     const audioCtxRef = useRef<AudioContext | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Start alarm sound + vibration on mount
+    // Start alarm sound on mount
     useEffect(() => {
         // Web Audio API beep
         try {
@@ -36,26 +36,25 @@ export function AlarmModal({ warnings, medicineName, onFindHospital }: Props) {
             intervalRef.current = setInterval(playBeep, 800);
         } catch { /* AudioContext unavailable */ }
 
-        // Vibration API
-        if ('vibrate' in navigator) {
-            navigator.vibrate([500, 200, 500, 200, 500]);
-        }
-
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
             audioCtxRef.current?.close();
-            if ('vibrate' in navigator) navigator.vibrate(0);
         };
     }, []);
 
     function handleAcknowledge() {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        audioCtxRef.current?.close();
-        acknowledgeAlarm();
+        try {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            audioCtxRef.current?.close();
+        } catch { /* ignore cleanup errors */ }
+        try { acknowledgeAlarm(); } catch { /* never crash on ack */ }
     }
 
     const hasLowStock = warnings.some(w => w.type === 'LOW_STOCK');
     const hasCourse = warnings.some(w => w.type === 'INSUFFICIENT_COURSE');
+
+    // Safety guard: do not render if warnings is empty/undefined
+    if (!warnings || warnings.length === 0) return null;
 
     return (
         <div className="alarm-overlay">
@@ -77,14 +76,22 @@ export function AlarmModal({ warnings, medicineName, onFindHospital }: Props) {
                 </div>
 
                 <div className="alarm-actions">
-                    {contacts.length > 0 && (
+                    {/* Emergency call — first contact */}
+                    {contacts.length > 0 ? (
                         <a className="btn btn--alarm-call" href={`tel:${contacts[0].phone}`}>
                             📞 Call {contacts[0].name}
                         </a>
+                    ) : (
+                        <p className="alarm-no-contact">⚠️ No caregiver set — add one in Contacts tab.</p>
                     )}
-                    <button className="btn btn--alarm-hospital" onClick={() => { handleAcknowledge(); onFindHospital(); }}>
-                        🏥 Find Hospital
-                    </button>
+
+                    {/* Refill suggestion for low stock */}
+                    {hasLowStock && (
+                        <div className="alarm-refill-hint">
+                            💊 Pills running low — please refill soon.
+                        </div>
+                    )}
+
                     <button className="btn btn--alarm-ack" onClick={handleAcknowledge}>
                         ✓ I Acknowledge
                     </button>

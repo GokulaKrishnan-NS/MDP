@@ -12,7 +12,8 @@ export interface Tray {
     durationDays: number;
     courseTotalRequired: number;
     motorCommand: string;
-    scheduledTime?: string; // "HH:MM" 24-hour format
+    doseTimes: string[];         // ["HH:MM", ...] — one per dose per day
+    scheduledTime?: string;      // @deprecated — kept for persisted data compat
 }
 
 export interface CreateTrayInput {
@@ -22,7 +23,8 @@ export interface CreateTrayInput {
     pillsPerDose: number;
     dosesPerDay: number;
     durationDays: number;
-    scheduledTime?: string; // "HH:MM" 24-hour format
+    doseTimes?: string[];         // ["HH:MM", ...]
+    scheduledTime?: string;       // @deprecated — single slot fallback
 }
 
 export type WarningType = 'LOW_STOCK' | 'INSUFFICIENT_COURSE';
@@ -52,11 +54,4 @@ export interface EmergencyContact {
     phone: string;
 }
 
-export interface Hospital {
-    id: number;
-    name: string;
-    address: string;
-    phone: string | null;
-    distance_km: string;
-    maps_link: string;
-}
+

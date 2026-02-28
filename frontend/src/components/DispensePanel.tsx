@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../store/appStore';
 import { api } from '../services/apiClient';
 import { logDispenseEvent } from '../utils/historyManager';
-import { isWithinDoseWindow } from '../utils/timeWindow';
+import { findActiveDoseSlot, isWithinDoseWindow, getNearestBlockedReason } from '../utils/timeWindow';
+import { isDoseTaken, getTakenDosesForTray } from '../utils/doseTracker';
 
 interface Props {
     mode: 'mock' | 'iot';
@@ -16,23 +17,53 @@ export function DispensePanel({ mode }: Props) {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
+    // Compute taken status per tray (refreshes on each render)
+    const takenMap = useMemo(() => {
+        const map = new Map<number, Set<string>>();
+        trays.forEach(t => map.set(t.trayId, getTakenDosesForTray(t.trayId)));
+        return map;
+    }, [trays]);
+
+    function isTrayCurrentlyTaken(tray: typeof trays[0]): boolean {
+        const times = Array.isArray(tray.doseTimes) && tray.doseTimes.length > 0
+            ? tray.doseTimes
+            : tray.scheduledTime ? [tray.scheduledTime] : [];
+        if (times.length === 0) return false;
+        const active = findActiveDoseSlot(times);
+        if (!active) return false; // no active slot = not in window, not "taken"
+        return isDoseTaken(tray.trayId, active.slot);
+    }
+
     async function handleDispense(e: React.FormEvent) {
         e.preventDefault();
         if (!selected) { setError('Select a medicine first'); return; }
         setError(''); setMessage(''); setLoading(true);
 
         const tray = trays.find(t => t.medicineName === selected);
+        const doseTimes: string[] = tray
+            ? (Array.isArray(tray.doseTimes) && tray.doseTimes.length > 0
+                ? tray.doseTimes
+                : tray.scheduledTime ? [tray.scheduledTime] : [])
+            : [];
 
         try {
             if (mode === 'mock') {
-                dispense(selected); // guard + logging handled inside appStore
+                dispense(selected); // full guard (time + taken) handled inside appStore
                 setMessage(`✓ Dose dispensed (mock): ${selected}`);
             } else {
-                // IoT time-window guard (client-side)
-                if (tray?.scheduledTime) {
+                // ── IoT path: mirror the same guards as the store ─────────
+                if (doseTimes.length > 0) {
+                    const active = findActiveDoseSlot(doseTimes);
+                    if (!active) {
+                        throw new Error(getNearestBlockedReason(doseTimes));
+                    }
+                    if (tray && isDoseTaken(tray.trayId, active.slot)) {
+                        throw new Error(`✅ This dose (${active.slot}) has already been taken. ${getNearestBlockedReason(doseTimes)}`);
+                    }
+                } else if (tray?.scheduledTime) {
                     const win = isWithinDoseWindow(tray.scheduledTime);
                     if (!win.ok) {
-                        if (tray) logDispenseEvent(
+                        logDispenseEvent(
                             { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
                             tray.pillsPerDose,
                             win.status as 'blocked-early' | 'blocked-late',
@@ -40,17 +71,20 @@ export function DispensePanel({ mode }: Props) {
                         throw new Error(win.message);
                     }
                 }
+
                 const res = await api.dispense(selected, 'iot') as any;
-                if (tray) logDispenseEvent(
-                    { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
-                    tray.pillsPerDose,
-                    'success',
-                );
+                if (tray) {
+                    logDispenseEvent(
+                        { trayId: tray.trayId, medicineName: tray.medicineName, pillsPerDose: tray.pillsPerDose },
+                        tray.pillsPerDose,
+                        'success',
+                    );
+                }
                 setMessage(`✓ Dose dispensed (IoT): ${res.data?.medicineName}. Pills remaining: ${res.data?.pillsRemaining}`);
             }
             setSelected('');
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message ?? 'Dispense failed — please try again.');
         } finally {
             setLoading(false);
         }
@@ -69,18 +103,39 @@ export function DispensePanel({ mode }: Props) {
             ) : (
                 <form className="dispense-form" onSubmit={handleDispense}>
                     <div className="tray-select-grid">
-                        {trays.map(tray => (
-                            <button
-                                key={tray.trayId}
-                                type="button"
-                                className={`tray-select-btn ${selected === tray.medicineName ? 'tray-select-btn--active' : ''} ${tray.pillsRemaining <= tray.threshold ? 'tray-select-btn--low' : ''}`}
-                                onClick={() => setSelected(tray.medicineName)}
-                            >
-                                <span className="tray-select-name">{tray.medicineName}</span>
-                                <span className="tray-select-stock">{tray.pillsRemaining} pills</span>
-                                {tray.scheduledTime && <span className="tray-select-schedule">⏰ {tray.scheduledTime}</span>}
-                            </button>
-                        ))}
+                        {trays.map(tray => {
+                            const taken = isTrayCurrentlyTaken(tray);
+                            const times = Array.isArray(tray.doseTimes) && tray.doseTimes.length > 0
+                                ? tray.doseTimes
+                                : tray.scheduledTime ? [tray.scheduledTime] : [];
+
+                            return (
+                                <button
+                                    key={tray.trayId}
+                                    type="button"
+                                    className={[
+                                        'tray-select-btn',
+                                        selected === tray.medicineName ? 'tray-select-btn--active' : '',
+                                        tray.pillsRemaining <= tray.threshold ? 'tray-select-btn--low' : '',
+                                        taken ? 'tray-select-btn--taken' : '',
+                                    ].filter(Boolean).join(' ')}
+                                    onClick={() => setSelected(tray.medicineName)}
+                                >
+                                    <span className="tray-select-name">{tray.medicineName}</span>
+                                    <span className="tray-select-stock">{tray.pillsRemaining} pills</span>
+                                    {taken && <span className="tray-taken-badge">✅ Taken</span>}
+                                    {!taken && times.length > 0 && (
+                                        <div className="tray-select-times">
+                                            {times.map(t => (
+                                                <span key={t} className={`tray-select-schedule ${takenMap.get(tray.trayId)?.has(t) ? 'tray-select-schedule--taken' : ''}`}>
+                                                    {takenMap.get(tray.trayId)?.has(t) ? '✅' : '⏰'} {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {error && <p className="form-error">{error}</p>}
