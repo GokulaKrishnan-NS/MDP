@@ -1,0 +1,8 @@
+{
+	"appId": "com.medidispense.app",
+	"appName": "MediDispense",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": true
+	}
+}
