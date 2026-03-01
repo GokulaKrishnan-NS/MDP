@@ -6,6 +6,7 @@ import path from 'path';
 import traysRoutes from './routes/traysRoutes';
 import dispenseRoutes from './routes/dispenseRoutes';
 import hospitalRoutes from './routes/hospitalRoutes';
+import iotRoutes from './routes/iotRoutes';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/trays', traysRoutes);
 app.use('/api/dispense', dispenseRoutes);
 app.use('/api/hospitals', hospitalRoutes);
+app.use('/api/iot', iotRoutes);
 
 // ── Serve Vite Frontend (Single Origin) ───────────────────────────────────────
 const FRONTEND_DIST = path.join(__dirname, '..', '..', 'frontend', 'dist');
