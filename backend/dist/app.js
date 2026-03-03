@@ -11,6 +11,7 @@ const path_1 = __importDefault(require("path"));
 const traysRoutes_1 = __importDefault(require("./routes/traysRoutes"));
 const dispenseRoutes_1 = __importDefault(require("./routes/dispenseRoutes"));
 const hospitalRoutes_1 = __importDefault(require("./routes/hospitalRoutes"));
+const iotRoutes_1 = __importDefault(require("./routes/iotRoutes"));
 const app = (0, express_1.default)();
 // Security + logging
 app.use((0, helmet_1.default)({ contentSecurityPolicy: false }));
@@ -30,6 +31,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/trays', traysRoutes_1.default);
 app.use('/api/dispense', dispenseRoutes_1.default);
 app.use('/api/hospitals', hospitalRoutes_1.default);
+app.use('/api/iot', iotRoutes_1.default);
 // ── Serve Vite Frontend (Single Origin) ───────────────────────────────────────
 const FRONTEND_DIST = path_1.default.join(__dirname, '..', '..', 'frontend', 'dist');
 app.use(express_1.default.static(FRONTEND_DIST));

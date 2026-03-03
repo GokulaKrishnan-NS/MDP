@@ -1,13 +1,13 @@
-import { Router } from 'express';
-import { iotState, IoTState } from '../iotState';
-
-const router = Router();
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const iotState_1 = require("../iotState");
+const router = (0, express_1.Router)();
 // Helper to auto-reset requests older than 2 minutes
-function checkAutoReset(state: IoTState) {
+function checkAutoReset(state) {
     if (state.dispenseRequested && state.requestedAt) {
         const age = Date.now() - state.requestedAt;
-        if (age > 2 * 60_000) { // 2 minutes
+        if (age > 2 * 60000) { // 2 minutes
             console.warn('[IoT] Dispense request expired, auto-resetting');
             state.dispenseRequested = false;
             state.confirmed = false;
@@ -15,34 +15,30 @@ function checkAutoReset(state: IoTState) {
         }
     }
 }
-
 /**
  * GET /api/iot/command
  * Polled by the ESP32 hardware. Returns whether a dispense command is waiting.
  * Also updates lastSeen and performs an auto-reset on stale requests.
  */
 router.get('/command', (_req, res) => {
-    iotState.lastSeen = Date.now();
-    checkAutoReset(iotState);
-    console.log(`[IoT] /command polled – dispense=${iotState.dispenseRequested}`);
-    res.json({ dispense: iotState.dispenseRequested });
+    iotState_1.iotState.lastSeen = Date.now();
+    checkAutoReset(iotState_1.iotState);
+    console.log(`[IoT] /command polled – dispense=${iotState_1.iotState.dispenseRequested}`);
+    res.json({ dispense: iotState_1.iotState.dispenseRequested });
 });
-
 /**
  * POST /api/iot/confirm
  * Called by ESP32 after servo rotation to acknowledge the dispense.
  * Resets the dispenseRequested flag and marks confirmed.
  */
 router.post('/confirm', (_req, res) => {
-    iotState.lastSeen = Date.now();
+    iotState_1.iotState.lastSeen = Date.now();
     console.log('[IoT] /confirm received');
-    if (iotState.dispenseRequested) {
-        iotState.dispenseRequested = false;
-        iotState.confirmed = true;
-        console.log(`[IoT] Dispense CONFIRMED by device at ${new Date().toISOString()}`);
-        console.log('[IoT] History: Dispense event marked as successfully executed.');
+    if (iotState_1.iotState.dispenseRequested) {
+        iotState_1.iotState.dispenseRequested = false;
+        iotState_1.iotState.confirmed = true;
+        console.log('[IoT] Dispense confirmed by device');
     }
     res.json({ success: true });
 });
-
-export default router;
+exports.default = router;

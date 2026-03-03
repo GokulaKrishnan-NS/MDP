@@ -16,8 +16,14 @@ export const api = {
     addTray: (body: object) => request('/trays', { method: 'POST', body: JSON.stringify(body) }),
     initTrays: (body: object[]) => request('/trays/init', { method: 'POST', body: JSON.stringify(body) }),
     deleteTray: (id: number) => request(`/trays/${id}`, { method: 'DELETE' }),
-    dispense: (medicineName: string, mode: string) =>
-        request('/dispense', { method: 'POST', body: JSON.stringify({ medicineName, mode }) }),
+    dispense: async (medicineName: string, mode: string) => {
+        console.log(`[Frontend] Requesting dispense via backend: ${medicineName}, mode: ${mode}`);
+        const backendRes = await request('/dispense', {
+            method: 'POST',
+            body: JSON.stringify({ medicineName, mode })
+        });
+        return backendRes;
+    },
     getDeviceStatus: () => request('/device/status'),
 };
 

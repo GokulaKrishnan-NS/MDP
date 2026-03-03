@@ -150,6 +150,30 @@ body,
   width: 100%;
 }
 
+/* ── ESP32 Config Panel ── */
+.esp32-config {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.esp32-config h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.esp32-form {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.esp32-form .input {
+  flex: 1;
+}
+
 /* ── Section Cards ── */
 .section-card {
   background: var(--bg-card);
